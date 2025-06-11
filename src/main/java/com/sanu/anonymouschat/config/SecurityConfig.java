@@ -1,8 +1,7 @@
 package com.sanu.anonymouschat.config;
 
 import com.sanu.anonymouschat.service.CustomUserDetailsService;
-import com.sanu.anonymouschat.service.UserService; // Keep UserService import
-// import com.sanu.anonymouschat.util.CustomLoginSuccessHandler; // REMOVE THIS IMPORT
+import com.sanu.anonymouschat.service.UserService;
 import com.sanu.anonymouschat.util.CustomLogoutHandler;
 import com.sanu.anonymouschat.util.CustomLogoutSuccessHandler;
 
@@ -23,7 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
-    private final UserService userService; // Keep UserService injection
+    private final UserService userService;
     private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
     private final CustomLogoutHandler customLogoutHandler;
     private final PasswordEncoder passwordEncoder;
@@ -41,8 +40,6 @@ public class SecurityConfig {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // REMOVE THE customLoginSuccessHandlerBean() method as it will no longer be used directly here.
-
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
@@ -56,8 +53,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
+                        // --- IMPORTANT: ADDED /health TO PERMITALL ---
+                        .requestMatchers("/health").permitAll()
                         .requestMatchers("/auth/register", "/auth/login", "/", "/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/postlogin-redirect").authenticated() // Allow access to our new redirect endpoint
+                        .requestMatchers("/postlogin-redirect").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/user/**").hasAnyRole("GIRL", "BOY", "ADMIN")
                         .anyRequest().authenticated()
@@ -65,10 +64,7 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/auth/login")
                         .loginProcessingUrl("/authenticateTheUser")
-                        // >>>>>> ALL successful logins now redirect to this single endpoint <<<<<<
-                        // This handles both initial login and "back button" scenarios for authenticated users.
                         .defaultSuccessUrl("/postlogin-redirect", true)
-                        // .successHandler(customLoginSuccessHandlerBean()) // REMOVE THIS LINE
                         .failureUrl("/auth/login?error=true")
                         .permitAll()
                 )
