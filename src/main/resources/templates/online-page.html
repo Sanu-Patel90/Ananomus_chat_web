@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security6">
+<head>
+  <title>Anonymous Chat - Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN for user icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Emoji Picker Element CDN -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
+  <style>
+    /* Custom font for a modern look */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Custom scrollbar for chat messages */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    /* Green dot for online status */
+    .online-dot {
+      display: inline-block;
+      width: 8px; /* Size of the dot */
+      height: 8px; /* Size of the dot */
+      background-color: #10B981; /* Tailwind green-500 */
+      border-radius: 50%; /* Makes it a circle */
+      margin-right: 6px; /* Space between dot and username */
+      box-shadow: 0 0 4px #10B981; /* Optional: Add a subtle glow for more appeal */
+    }
+
+    /* Style for the emoji picker container */
+    emoji-picker {
+      position: absolute;
+      bottom: 80px; /* Adjust based on your input/send button height */
+      right: 16px;
+      --emoji-size: 24px;
+      --emoji-picker-height: 300px;
+      --emoji-picker-width: 320px;
+      /* Customize colors if needed */
+      --background-color: #ffffff;
+      --category-label-color: #374151;
+      --category-label-active-color: #2563eb;
+      --category-label-background-color: #f3f4f6;
+      --button-hover-background-color: #eff6ff;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col p-4 sm:p-6 lg:p-8">
+
+<!-- Header Section: User Info and Logout -->
+<header class="bg-white shadow-md rounded-lg p-4 mb-6 flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
+  <div class="text-gray-700 text-lg sm:text-xl font-semibold flex items-center space-x-2">
+    <span>Logged in as:</span>
+    <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-base sm:text-lg font-medium shadow-sm flex items-center space-x-2">
+        <i data-lucide="user" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        <span id="usernameDisplay">Loading Username...</span>
+      </span>
+  </div>
+  <form th:action="@{/logout}" method="post" class="m-0">
+    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75">
+      Logout
+    </button>
+  </form>
+</header>
+
+<!-- Main Content Area: Online Users and Chat Box -->
+<main class="flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+  <!-- Online Users Section -->
+  <section class="lg:col-span-1 bg-white shadow-md rounded-lg p-4 flex flex-col h-full min-h-[300px]">
+    <h3 class="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">Online Users (Opposite Gender)</h3>
+    <ul id="users-list" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar">
+      <!-- User list items will be dynamically inserted here -->
+    </ul>
+  </section>
+
+  <!-- Chat Box Section -->
+  <section class="lg:col-span-3 bg-white shadow-md rounded-lg p-4 flex flex-col h-full min-h-[500px] relative"> <!-- Added relative here -->
+    <h3 id="chat-header" class="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200 flex items-center space-x-2">
+      <span>Chat with:</span>
+      <span id="selectedChatUser" class="text-gray-500 font-medium">No one selected</span>
+    </h3>
+
+    <!-- Chat Messages Display Area -->
+    <div id="chat-messages" class="flex-grow bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-y-auto mb-4 custom-scrollbar">
+      <p class="text-gray-400 text-center text-sm">Select a user from the online list to start chatting.</p>
+    </div>
+
+    <!-- Message Input Area -->
+    <div id="message-input" class="flex space-x-3">
+      <!-- Emoji button -->
+      <button id="emoji-button"
+              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 flex items-center justify-center">
+        <i data-lucide="smile" class="w-5 h-5"></i> <!-- Lucide smile icon -->
+      </button>
+      <input type="text" id="messageContent" placeholder="Type your message..."
+             class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
+      <button onclick="sendMessage()"
+              class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+        Send
+      </button>
+    </div>
+    <!-- Emoji Picker (hidden by default) -->
+    <emoji-picker id="emojiPicker" class="hidden"></emoji-picker>
+  </section>
+</main>
+
+<script>
+    let currentUsername = "";
+    let selectedUser = "";
+    let currentUserDisplayName = "";
+    let unreadCounts = {};
+
+    // --- Initial Setup and User Info ---
+    async function loadCurrentUser() {
+        try {
+            const res = await fetch('/user/me');
+            if (!res.ok) {
+                if (res.status === 401) {
+                    window.location.href = "/auth/login";
+                }
+                throw new Error('Not authenticated or server error fetching current user');
+            }
+            const data = await res.json();
+            currentUsername = String(data.username);
+            currentUserDisplayName = String(data.displayName);
+            document.getElementById('usernameDisplay').textContent = currentUserDisplayName;
+            console.log("Current logged-in user:", currentUsername, "Display Name:", currentUserDisplayName);
+            await fetchUnreadCounts();
+            loadOnlineUsers();
+            lucide.createIcons(); // Render Lucide icons
+        } catch (error) {
+            console.error("Error fetching current user:", error);
+            document.getElementById('usernameDisplay').textContent = 'Error loading username.';
+        }
+    }
+
+    async function fetchUnreadCounts() {
+        try {
+            const response = await fetch('/chat/unread-counts');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = "/auth/login";
+                }
+                throw new Error('Failed to fetch unread counts');
+            }
+            unreadCounts = await response.json();
+            console.log("Fetched unread counts:", unreadCounts);
+        } catch (error) {
+            console.error("Error fetching unread counts:", error);
+            unreadCounts = {};
+        }
+    }
+
+    // --- Online Users Logic ---
+    async function loadOnlineUsers() {
+        try {
+            await fetchUnreadCounts();
+
+            const response = await fetch('/user/opposite-online');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = "/auth/login";
+                }
+                throw new Error('Failed to fetch online users');
+            }
+            const users = await response.json();
+            console.log("Fetched online users (User objects):", users);
+
+            const list = document.getElementById("users-list");
+            list.innerHTML = "";
+
+            if (users.length === 0) {
+                list.innerHTML = "<li class='text-gray-400 p-2'>No online users found of the opposite gender.</li>";
+            } else {
+                users.forEach(userObject => {
+                    const userDisplayName = String(userObject.displayName);
+                    const unreadCount = unreadCounts[userDisplayName] || 0;
+
+                    const li = document.createElement("li");
+                    li.className = "user-list-item px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors duration-150 ease-in-out flex items-center justify-between";
+                    li.setAttribute('data-display-name', userDisplayName);
+
+                    let userContent = `<div class="flex items-center">
+                                         <span class="online-dot"></span>
+                                         <span>${userDisplayName}</span>
+                                       </div>`;
+
+                    if (unreadCount > 0) {
+                        userContent += `<span class="unread-badge bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-2">
+                                          ${unreadCount}
+                                        </span>`;
+                    }
+                    li.innerHTML = userContent;
+
+                    li.onclick = () => {
+                        selectUserForChat(userDisplayName);
+                    };
+                    list.appendChild(li);
+
+                    if (selectedUser === userDisplayName) {
+                        li.classList.add('bg-blue-200', 'font-semibold');
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Error loading online users:", error);
+            document.getElementById("users-list").innerHTML = "<li class='text-red-500 p-2'>Error loading users.</li>";
+        }
+    }
+
+    // --- Chat Selection and Loading Logic ---
+    async function selectUserForChat(displayName) {
+        displayName = String(displayName);
+        console.log("selectUserForChat function called with DisplayName:", displayName);
+
+        if (selectedUser === displayName) {
+            console.log("User already selected:", displayName);
+            return;
+        }
+
+        selectedUser = displayName;
+        console.log("Global selectedUser variable set to DisplayName:", selectedUser);
+        document.getElementById("selectedChatUser").innerText = selectedUser;
+
+        document.querySelectorAll('.user-list-item').forEach(item => {
+            item.classList.remove('bg-blue-200', 'font-semibold');
+        });
+
+        const selectedListItem = document.querySelector(`.user-list-item[data-display-name="${displayName}"]`);
+        if (selectedListItem) {
+            selectedListItem.classList.add('bg-blue-200', 'font-semibold');
+            const badge = selectedListItem.querySelector('.unread-badge');
+            if (badge) {
+                badge.remove();
+            }
+        }
+
+        await markMessagesAsRead(displayName);
+        if (unreadCounts[displayName]) {
+            delete unreadCounts[displayName];
+        }
+
+        loadChat();
+    }
+
+    async function markMessagesAsRead(otherUserDisplayName) {
+        try {
+            const response = await fetch(`/chat/mark-as-read/${encodeURIComponent(otherUserDisplayName)}`, {
+                method: 'POST'
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = "/auth/login";
+                }
+                throw new Error('Failed to mark messages as read');
+            }
+            console.log(`Messages from ${otherUserDisplayName} marked as read.`);
+        } catch (error) {
+            console.error("Error marking messages as read:", error);
+        }
+    }
+
+    async function loadChat() {
+        const chatBox = document.getElementById("chat-messages");
+        if (!selectedUser || typeof selectedUser !== 'string' || selectedUser.trim() === "") {
+            chatBox.innerHTML = "<p class='text-gray-400 text-center text-sm'>Select a user from the online list to start chatting.</p>";
+            return;
+        }
+
+        console.log("loadChat: Attempting to fetch conversation for selectedUser DisplayName:", selectedUser);
+
+        try {
+            const encodedSelectedUserDisplayName = encodeURIComponent(selectedUser);
+            const response = await fetch(`/chat/conversation/${encodedSelectedUserDisplayName}`);
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = "/auth/login";
+                }
+                throw new Error('Failed to load chat conversation');
+            }
+            const messages = await response.json();
+            console.log("Received messages (MessageDTOs) from backend:", messages);
+            chatBox.innerHTML = "";
+
+            if (messages.length === 0) {
+                chatBox.innerHTML = "<p class='text-gray-400 text-center text-sm'>No messages yet. Start the conversation!</p>";
+            } else {
+                messages.forEach(msg => {
+                    const div = document.createElement("div");
+                    const isMe = msg.senderUsername === currentUsername;
+                    div.className = `chat-message mb-2 p-3 rounded-xl max-w-[80%] break-words ${isMe ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}`;
+
+                    const senderName = isMe ? "You" : msg.senderDisplayName;
+                    div.innerHTML = `<span class="font-bold">${senderName}:</span> ${msg.content}`;
+                    chatBox.appendChild(div);
+                });
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } catch (error) {
+            console.error("Error loading chat:", error);
+            chatBox.innerHTML = "<p class='text-red-500 text-center text-sm'>Error loading chat messages. Please try again.</p>";
+        }
+    }
+
+    async function sendMessage() {
+        const contentInput = document.getElementById("messageContent");
+        const content = contentInput.value;
+
+        if (!selectedUser || typeof selectedUser !== 'string' || selectedUser.trim() === "" || content.trim() === "") {
+            contentInput.placeholder = "Message cannot be empty!";
+            setTimeout(() => contentInput.placeholder = "Type your message...", 2000);
+            return;
+        }
+
+        console.log("Sending message to DisplayName:", selectedUser, "Content:", content);
+
+        try {
+            const response = await fetch("/chat/send", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    receiverDisplayName: selectedUser,
+                    content: content
+                })
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = "/auth/login";
+                }
+                throw new Error('Failed to send message');
+            }
+            contentInput.value = "";
+            loadChat();
+        } catch (error) {
+            console.error("Error sending message:", error);
+            alert("Failed to send message. Please try again.");
+        }
+    }
+
+    // --- Auto-Refresh ---
+    setInterval(() => {
+        fetchUnreadCounts().then(() => {
+            loadOnlineUsers();
+            if (selectedUser) {
+                loadChat();
+            }
+        });
+    }, 10000);
+
+    // Initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCurrentUser();
+
+        // --- Emoji Picker Integration ---
+        const emojiButton = document.getElementById('emoji-button');
+        const emojiPicker = document.getElementById('emojiPicker');
+        const messageContentInput = document.getElementById('messageContent');
+
+        emojiButton.addEventListener('click', () => {
+            // Toggle visibility of the emoji picker
+            emojiPicker.classList.toggle('hidden');
+        });
+
+        // Event listener for when an emoji is selected from the picker
+        emojiPicker.addEventListener('emoji-click', event => {
+            messageContentInput.value += event.detail.emoji.unicode;
+            messageContentInput.focus(); // Keep focus on input
+            emojiPicker.classList.add('hidden'); // Hide picker after selection
+        });
+
+        // Hide emoji picker if clicking outside
+        document.addEventListener('click', (event) => {
+            const isClickInsidePicker = emojiPicker.contains(event.target);
+            const isClickOnButton = emojiButton.contains(event.target);
+            if (!isClickInsidePicker && !isClickOnButton && !emojiPicker.classList.contains('hidden')) {
+                emojiPicker.classList.add('hidden');
+            }
+        });
+
+        // Prevent emoji picker from getting hidden when clicking inside it
+        emojiPicker.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+        // --- End Emoji Picker Integration ---
+    });
+
+    // --- JavaScript to manipulate browser history (keep for back button fix) ---
+    window.addEventListener('pageshow', function(event) {
+        console.log("pageshow event fired. Persisted:", event.persisted, "Referrer:", document.referrer);
+        if (event.persisted || window.history.replaceState) {
+            if (document.referrer.includes('/auth/login')) {
+                console.log("Replacing history state. Current URL:", window.location.href);
+                window.history.replaceState(null, '', window.location.href);
+            }
+        }
+    });
+  </script>
+</body>
+</html>

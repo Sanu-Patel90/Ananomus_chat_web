@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title>Home</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+  <h2 class="mb-4">Welcome Home!</h2>
+
+  <div sec:authorize="isAuthenticated()">
+    <p>Logged in as: <span sec:authentication="name"></span></p>
+    <p>Roles: <span sec:authentication="authorities"></span></p>
+  </div>
+
+  <p>This is a placeholder home page.</p>
+
+  <hr>
+
+  <div sec:authorize="hasRole('ROLE_ADMIN')">
+    <p><a href="/admin/pending-users" class="btn btn-info">Go to Admin Dashboard</a></p>
+  </div>
+
+  <div sec:authorize="isAuthenticated() and !hasRole('ROLE_ADMIN')">
+    <p><a href="/user/online-page" class="btn btn-info">Go to Online Chat</a></p>
+  </div>
+
+
+  <form th:action="@{/logout}" method="post" class="mt-3">
+    <button type="submit" class="btn btn-danger">Logout</button>
+  </form>
+</div>
+</body>
+</html>

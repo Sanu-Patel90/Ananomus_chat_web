@@ -1,0 +1,93 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+
+# Maven
+/target/
+pom.xml.tag
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+releaseCandidate.properties
+.repository/
+.mvn/timing/
+.flattened-pom.xml
+
+# Eclipse
+.classpath
+.project
+.settings/
+.sts4-workspace/
+.metadata/   # Explicitly ignore metadata if it somehow tries to sneak in
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+/out/
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Spring Boot
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.log
+logs/
+tmp/
+.env
+.env.*
+uploads/
+!/.mvn/wrapper/maven-wrapper.jar # Keep the Maven wrapper JAR if you use it
+
+# Crash files
+hs_err_pid*
+
+# For generated API keys (if applicable)
+*.key
+*.pem
+*.p12
+
+# Ignore local application.properties when using environment variables on deployment
+# You can uncomment or adjust this if you have a local-specific config you don't want to commit
+# application-local.properties
+# application-dev.properties

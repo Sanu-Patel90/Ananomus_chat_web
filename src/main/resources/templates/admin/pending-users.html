@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title>Pending User Approvals</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* Custom styles to make buttons inline and add some spacing */
+    .action-forms {
+      display: flex; /* Use flexbox to align buttons in a row */
+      gap: 5px;      /* Add a small gap between buttons */
+    }
+  </style>
+</head>
+<body>
+<div class="container mt-5">
+  <h2>Pending User Approvals</h2>
+
+  <div th:if="${successMessage}" class="alert alert-success" role="alert">
+    <p th:text="${successMessage}"></p>
+  </div>
+  <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+    <p th:text="${errorMessage}"></p>
+  </div>
+
+  <table class="table table-striped">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Gender</th>
+      <th>Role</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="user : ${pendingUsers}">
+      <td th:text="${user.id}"></td>
+      <td th:text="${user.username}"></td>
+      <td th:text="${user.email}"></td>
+      <td th:text="${user.gender.name()}"></td>
+      <td th:text="${user.role.name()}"></td>
+      <td>
+        <div class="action-forms">
+          <form th:action="@{/admin/approve-user/{id}(id=${user.id})}" method="post">
+            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+          </form>
+          <form th:action="@{/admin/delete-user/{id}(id=${user.id})}" method="post">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    <tr th:if="${pendingUsers.empty}">
+      <td colspan="6" class="text-center">No users awaiting approval.</td>
+    </tr>
+    </tbody>
+  </table>
+
+  <p><a href="/home" class="btn btn-primary">Back to Home</a></p>
+
+  <form th:action="@{/logout}" method="post" class="mt-3">
+    <button type="submit" class="btn btn-secondary">Logout</button>
+  </form>
+</div>
+
+<!-- JavaScript to manipulate browser history (ADDED THIS BLOCK) -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // This script runs when the page loads.
+    // It replaces the current history entry with itself, effectively removing
+    // the previous page (like the login page) from the browser's back stack.
+    window.addEventListener('pageshow', function(event) {
+        // pageshow event is better than load for back/forward navigation,
+        // as it fires even when the page is loaded from the browser's cache (bfcache).
+        if (event.persisted || window.history.replaceState) {
+            // Check if the referrer (the page that linked to this one) was the login page.
+            // This prevents replacing history entries if you came from a non-login page.
+            if (document.referrer.includes('/auth/login')) {
+                // Replace the current history entry with the current URL.
+                // After this, hitting the back button will skip the login page.
+                window.history.replaceState(null, '', window.location.href);
+            }
+        }
+    });
+    /*]]>*/
+</script>
+</body>
+</html>
