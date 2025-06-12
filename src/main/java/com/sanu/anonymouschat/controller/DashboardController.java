@@ -13,8 +13,8 @@ public class DashboardController {
         return "online-page"; // This will render src/main/resources/templates/online-page.html
     }
 
-    // Optional: If you want a root home page after login, you could add:
-    @GetMapping({"/", "/home"})
+    // This method will now ONLY map to "/home", resolving the ambiguity.
+    @GetMapping("/home") // <--- CHANGED: Removed "/" from the mapping
     public String homePage() {
         return "home"; // Assumes you have src/main/resources/templates/home.html
     }
