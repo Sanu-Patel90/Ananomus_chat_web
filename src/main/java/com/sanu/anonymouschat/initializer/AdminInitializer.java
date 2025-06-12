@@ -32,15 +32,17 @@ public class AdminInitializer implements CommandLineRunner {
             admin.setUsername(adminUsername);
             admin.setPassword(passwordEncoder.encode(adminPassword));
 
-            // --- IMPORTANT FIX: Assign Enum values directly ---
-            admin.setGender(User.Gender.MALE); // Assign the MALE enum constant
-            admin.setRole(User.Role.ROLE_ADMIN); // Assign the ROLE_ADMIN enum constant
-            // --- END IMPORTANT FIX ---
+            admin.setGender(User.Gender.MALE);
+            admin.setRole(User.Role.ROLE_ADMIN);
 
-            admin.setApproved(true); // Admin user should always be approved
-            admin.setOnline(false); // Admin user starts offline
+            // --- CRITICAL FIX: Add this line to set a display name for the admin user ---
+            admin.setDisplayName("AdminUser"); // Or any other default display name you prefer
+            // -------------------------------------------------------------------------
 
-            userRepository.save(admin);
+            admin.setApproved(true);
+            admin.setOnline(false);
+
+            userRepository.save(admin); // This is line 43 in your code, which caused the error
             System.out.println("Admin user '" + adminUsername + "' created successfully.");
         } else {
             System.out.println("Admin user '" + adminUsername + "' already exists. Skipping creation.");
